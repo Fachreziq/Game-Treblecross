@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Treblecross AI — Adversarial Search</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="header">
+    <div class="header-inner">
+      <div class="logo">
+        <span class="logo-icon">⚔</span>
+        <div>
+          <h1>Treblecross AI</h1>
+          <p>Adversarial Search — Kecerdasan Buatan</p>
+        </div>
+      </div>
+      <div class="header-badge">Minimax + Alpha-Beta Pruning</div>
+    </div>
+  </header>
+
+  <main class="container">
+
+    <!-- PANEL KIRI: Kontrol + Stats -->
+    <aside class="sidebar">
+
+      <!-- Pengaturan Game -->
+      <div class="card">
+        <h2 class="card-title">⚙ Pengaturan</h2>
+
+        <div class="control-group">
+          <label>Mode Permainan</label>
+          <div class="btn-group">
+            <button class="btn-mode active" data-mode="hvai" onclick="setMode('hvai')">Human vs AI</button>
+            <button class="btn-mode" data-mode="hvh" onclick="setMode('hvh')">Human vs Human</button>
+          </div>
+        </div>
+
+        <div class="control-group">
+          <label>Algoritma AI</label>
+          <div class="toggle-row">
+            <span>Minimax</span>
+            <label class="toggle">
+              <input type="checkbox" id="abToggle" checked onchange="toggleAB()">
+              <span class="toggle-slider"></span>
+            </label>
+            <span>+ Alpha-Beta</span>
+          </div>
+        </div>
+
+        <div class="control-group">
+          <label>Kedalaman Pencarian: <strong id="depthVal">4</strong></label>
+          <input type="range" id="depthSlider" min="1" max="7" value="4"
+                 oninput="document.getElementById('depthVal').textContent=this.value">
+        </div>
+
+        <div class="control-group">
+          <label>Ukuran Papan: <strong id="sizeVal">15</strong> sel</label>
+          <input type="range" id="sizeSlider" min="8" max="20" value="15"
+                 oninput="document.getElementById('sizeVal').textContent=this.value">
+        </div>
+
+        <button class="btn-primary" onclick="newGame()">🔄 New Game</button>
+      </div>
+
+      <!-- Status Permainan -->
+      <div class="card">
+        <h2 class="card-title">📊 Status</h2>
+        <div class="status-box" id="statusBox">
+          <span class="status-icon">🎮</span>
+          <span id="statusText">Giliran: Human (Anda)</span>
+        </div>
+        <div class="turn-indicator">
+          <div class="turn-dot" id="turnHuman"></div>
+          <span>Human</span>
+          <div class="turn-dot inactive" id="turnAI"></div>
+          <span>AI</span>
+        </div>
+      </div>
+
+      <!-- Counter Node -->
+      <div class="card">
+        <h2 class="card-title">🔢 Node Counter</h2>
+        <div class="counter-grid">
+          <div class="counter-item">
+            <div class="counter-label">Minimax</div>
+            <div class="counter-value" id="mmCount">0</div>
+            <div class="counter-sub">node dievaluasi</div>
+          </div>
+          <div class="counter-item alpha">
+            <div class="counter-label">Alpha-Beta</div>
+            <div class="counter-value" id="abCount">0</div>
+            <div class="counter-sub">node dievaluasi</div>
+          </div>
+        </div>
+        <div class="prune-bar-wrap">
+          <div class="prune-bar-label">
+            <span>Node dipangkas:</span>
+            <strong id="pruneCount">0</strong>
+          </div>
+          <div class="prune-bar-track">
+            <div class="prune-bar-fill" id="pruneBar" style="width:0%"></div>
+          </div>
+          <div class="prune-pct" id="prunePct">0% efisiensi</div>
+        </div>
+      </div>
+
+    </aside>
+
+    <!-- PANEL KANAN: Board + Tree -->
+    <section class="game-area">
+
+      <!-- Papan Game -->
+      <div class="card board-card">
+        <h2 class="card-title">🎯 Papan Permainan</h2>
+        <p class="board-hint">Klik sel untuk menempatkan X. Jangan buat 3 X berurutan!</p>
+        <div id="board" class="board"></div>
+        <div class="board-index" id="boardIndex"></div>
+      </div>
+
+      <!-- Visualisasi Game Tree -->
+      <div class="card tree-card">
+        <div class="tree-header">
+          <h2 class="card-title">🌳 Visualisasi Game Tree</h2>
+          <span class="tree-badge">3 Level</span>
+        </div>
+        <div class="tree-legend">
+          <span class="legend-dot max"></span><span>MAX (AI)</span>
+          <span class="legend-dot min"></span><span>MIN (Human)</span>
+          <span class="legend-dot pruned"></span><span>Dipangkas</span>
+        </div>
+        <div class="tree-scroll">
+          <canvas id="treeCanvas" width="700" height="320"></canvas>
+        </div>
+        <p class="tree-note" id="treeNote">Tree akan muncul setelah giliran AI</p>
+      </div>
+
+      <!-- Tabel Perbandingan -->
+      <div class="card">
+        <h2 class="card-title">📈 Riwayat Perbandingan</h2>
+        <div class="table-wrap">
+          <table id="histTable">
+            <thead>
+              <tr>
+                <th>Giliran</th>
+                <th>Depth</th>
+                <th>Minimax Nodes</th>
+                <th>Alpha-Beta Nodes</th>
+                <th>Dipangkas</th>
+                <th>Efisiensi</th>
+              </tr>
+            </thead>
+            <tbody id="histBody">
+              <tr id="placeholderRow"><td colspan="6" class="empty-row">Belum ada data — mainkan dulu melawan AI</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </section>
+  </main>
+
+  <!-- MODAL GAME OVER -->
+  <div class="modal-overlay" id="modalOverlay" onclick="closeModal()">
+    <div class="modal" onclick="event.stopPropagation()">
+      <div class="modal-icon" id="modalIcon">🏆</div>
+      <h2 id="modalTitle">Game Over</h2>
+      <p id="modalMsg">Selamat!</p>
+      <button class="btn-primary" onclick="newGame(); closeModal()">Main Lagi</button>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/tree-viz.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/game.js') }}"></script>
+</body>
+</html>
