@@ -1,0 +1,2 @@
+"python-3.11.9" | Out-File -FilePath runtime.txt -Encoding utf8
+".python-version" | Out-File -FilePath .python-version -Encoding utf8
